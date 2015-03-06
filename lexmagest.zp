@@ -1,0 +1,405 @@
+/******************************************************************************\
+FILE:           lexmagest.zp
+AUTHOR:         Martijn van der Klis (UiL-OTS) <M.H.vanderKlis@uu.nl>
+ADAPTED FROM:   Auditory Magnitude Estimation, Theo Veenker (UiL-OTS) <T.J.G.Veenker@uu.nl>
+
+EXPERIMENT:     Magnitude Estimation of Linguistic Acceptability
+
+DESCRIPTION:
+
+Purpose of this experiment is to measure the acceptability of a stimulus 
+(a sentence) a participant is perceiving relative to a standard stimulus
+(also known as the modulus). In every block, first, the modulus will be displayed. 
+For the modulus, the participant will enter a numerical value stating the acceptability 
+of the sentence. Then for each test trial the participant will be presented a sentence 
+to be judged. His task is to assign a score to the sentence relative to the score 
+entered for the modulus. 
+
+The sentences are displayed in a self-paced reading format, using a cumulative window 
+paradigm: the participant starts off with a single segment and he reveals next segment by hitting
+a button. The reaction times are stored, including one for a "special" word in the sentence, 
+a word that is most likely to cause a longer reading/reaction time. The resulting reaction times can 
+be used to cross-validate the magnitude estimations. 
+
+Note: the instructions and button texts are in Spanish.
+
+STRUCTURE:
+
+  - welcome
+
+  - instructions
+
+  - practice phase (1 block)
+      test block (n trials)
+        trial (modulus is first trial)
+
+  - pause
+
+  - test phase (n blocks)
+      test block (n trials)
+        trial (modulus is first trial)
+
+  - thank you
+
+
+HISTORY:
+2011-10-27 TV   Created.
+2013-08-13 MvdK Changed experiment flow for linguistic acceptability experiment.
+2013-08-14 MvdK Changed language to Spanish, added reaction time responses.
+2013-08-15 MvdK Finished up incorporating of self-paced reading.
+2014-06-20 MvdK Restructured for grouping and possible comprehension questions.
+
+\******************************************************************************/
+
+requires 1.6;
+
+import std_windows1;
+import std_texts_es;
+import std_entry_page1;
+import std_exit_page1;
+import std_pause_page;
+import std_blank_page;
+import std_choose_1of2_page;
+
+import test_page;
+
+
+Experiment experiment
+{
+    TestItem        item;               // current item
+    TestOutput      output;             // current output table row
+    string          modulus = "";       // current modulus  
+    real            modulus_score = 0;  // current modulus score
+
+    on_event:entry()
+    {
+        show_test_windows();
+    }
+
+
+    Part welcome
+    {
+        on_event:entry()
+        {
+            entry_page.set_text(WELCOME_TEXT);
+            entry_page.action(this, 0s);
+        }
+    }
+
+
+    Part instructions_1
+    {
+        on_event:entry()
+        {
+            pause_page.set_text(
+                "<b>Estimado participante,</b>\n"
+                "\n"
+                "Gracias por participar en este experimento.\n"
+                "\n"
+                "Vas a <u>leer</u> frases y a <u>valorar</u> la aceptabilidad de estas frases en comparación con una frase de referencia. "
+                "Lee atentamente todas las frases, porque a veces también habrá una pregunta acerca de la frase.\n"
+                "\n"
+                "Para casa frase tendrás que hacer lo siguiente:\n"
+                "\n"
+                "<b>1. Leer:</b>\n"
+                "Primero lee la frase de referencia. Después te presentamos otra frase. " 
+                "Para leer esta frase tendrás que revelar cada palabras pulsando la tecla barra espacio. "
+                "Así irás leyendo la frase palabra por palabra, y lo más importante, a tu ritmo.\n"
+                "\n"
+                "<i>Pulse [Entrar] para continuar.</i>", 
+                true);
+
+            pause_page.action(this);
+        }
+    }
+
+
+    Part instructions_2
+    {
+        on_event:entry()
+        {
+            pause_page.set_text(
+                "<b>2. Valorar:</b>\n"
+                "Después de leer tanto la frase de referencia como la otra frase debes valorarlas con un número. "
+                "Por eso es importante <u>realmente leer</u> las frases. Primero tienes que valorar la frase de referencia. "
+                "A esta frase le puedes dar cualquier valor, por ejemplo 100 (o 2000 o incluso 30).\n"
+                "Después valoras la otra frase comparándola con la frase de referencia. "
+                "Si crees que la otra frase es el doble de aceptable que la frase de referencia, debes insertar el valor 200. "
+                "Si crees que es la mitad de aceptable, debes insertar el valor 50. Resumen de la valoración:\n"
+                "\n"
+                "<i>Ejemplo A:</i>\n"
+                "Frase de referencia = 100\n"
+                "Otra frase = 200\n"
+                "La otra frase es considerada el doble de aceptable.\n"
+                "\n"
+                "<i>Ejemplo B:</i>\n"
+                "Frase de referencia = 40\n"
+                "Otra frase = 4\n"
+                "La otra frase es considerada diez veces menos aceptable.\n"
+                "\n"
+                "Uso de comas y puntos: si crees que la frase es diez veces más aceptable que <u>la frase de referencia (=100)</u>, "
+                "debes insertar el valor 1000 (sin puntos). "
+                "Si crees que la frase es, por ejemplo, mil veces menos aceptable que la frase de referencia, "
+                "debes insertar el valor 0,1 (con una coma).\n"
+                "\n"
+                "A continuación vamos a practicar con algunas frases de ejemplo. "
+                "Si tienes preguntas, por favor consulta a la persona que ha realizado el experimento.", 
+                true);
+
+            pause_page.action(this);
+        }
+    }
+
+
+    Block practice
+    {
+        on_event:entry()
+        {
+            num_cycles = test_prac_items.size;
+
+            // Prepare practice page: progress bar enabled.
+            test_page.setup(num_cycles);
+        }
+
+
+        on_event:exit()
+        {
+            test_page.cleanup();
+        }
+
+
+        Trial trial
+        {
+            on_event:entry()
+            {
+                item = test_prac_items[practice.cycle];
+            }
+
+
+            on_event:exit()
+            {
+                if (practice.cycle == 0) save_modulus();
+            }
+
+
+            SubTrial sub1
+            {
+                on_event:entry()
+                {
+                    test_page.action(this, item, reference_time, practice.cycle, modulus, modulus_score);
+                }
+            }
+
+
+            TransientPart
+            {
+                on_event:entry()
+                {
+                    // Check if we need to ask a comprehension question.
+                    if (length(item.question) == 0)
+                        trial.leave();  // No question. Trial done.
+                }
+            }
+
+
+            SubTrial sub2
+            {
+                on_event:entry()
+                {
+                    choose_1of2_page.set_text(item.question);
+                    choose_1of2_page.set_label_texts(YES_BUTTON_TEXT, NO_BUTTON_TEXT);
+                    choose_1of2_page.set_keys(KEY_Shift_L, KEY_Shift_R);
+                    choose_1of2_page.action(this);
+                }
+            }
+        }
+    }
+
+
+    Part
+    {
+        on_event:entry()
+        {
+            blank_page.action_auto(this, 500ms);
+        }
+    }
+
+
+    Part pause
+    {
+        on_event:entry()
+        {
+            pause_page.set_text(
+                "Final de la sesión de práctica.\n"
+                "\n"
+                "Si tienes alguna pregunta, por favor pregunta ahora a la persona encargada del experimento.\n"
+                "\n"
+                "<i>Pulsa cualquier botón cuando estés preparado.</i>", 
+                true);
+
+            pause_page.action(this);
+        }
+    }
+
+
+    Block test
+    {
+        on_event:entry()
+        {
+            // Randomize test items table.
+            if (shuffle_test_items() != OK) terminate;
+
+            num_cycles = test_items[selected_group].size;
+
+            // Prepare test page: progress bar enabled.
+            test_page.setup(num_cycles);
+        }
+
+
+        on_event:exit()
+        {
+            test_page.cleanup();
+
+            // Save test phase output table as CSV file.
+            test_output_save();
+        }
+
+
+        Trial trial
+        {
+            on_event:entry()
+            {
+                item = test_items[selected_group][test.cycle];
+            }
+
+
+            on_event:exit()
+            {
+                if (test.cycle == 0) save_modulus();
+
+                // Add new row to test output table.
+                test_output_append(output);
+            }
+
+
+            SubTrial sub1
+            {
+                on_event:entry()
+                {
+                    test_page.action(this, item, reference_time, test.cycle, modulus, modulus_score);
+                }
+
+
+                on_event:exit()
+                {
+                    // Save general session information
+                    output.trialnum = test.cycle + 1;
+                    output.id = item.id;
+                    output.type = item.type;
+                    // Save entered value
+                    output.score = test_page.response.score;
+                    // Save starred word
+	                output.starredword = test_page.response.starredword;
+	                output.starredpos  = test_page.response.starredpos;
+	                output.starredrt   = test_page.response.starredrt;
+                    // Save reaction times
+                    output.rt1 = test_page.response.rt[1];
+                    output.rt2 = test_page.response.rt[2];
+                    output.rt3 = test_page.response.rt[3];
+                    output.rt4 = test_page.response.rt[4];
+                    output.rt5 = test_page.response.rt[5];
+                    output.rt6 = test_page.response.rt[6];
+                    output.rt7 = test_page.response.rt[7];
+                    output.rt8 = test_page.response.rt[8];
+                    output.rt9 = test_page.response.rt[9];
+                    output.rt10 = test_page.response.rt[10];
+                    output.rt11 = test_page.response.rt[11];
+                    output.rt12 = test_page.response.rt[12];
+                    output.rt13 = test_page.response.rt[13];
+                    output.rt14 = test_page.response.rt[14];
+                    output.rt15 = test_page.response.rt[15];
+                    output.rt16 = test_page.response.rt[16];
+                    output.rt17 = test_page.response.rt[17];
+                    output.rt18 = test_page.response.rt[18];
+                    output.rt19 = test_page.response.rt[19];
+                    output.rt20 = test_page.response.rt[20];
+                    output.rt21 = test_page.response.rt[21];
+                    output.rt22 = test_page.response.rt[22];
+                    output.rt23 = test_page.response.rt[23];
+                    output.rt24 = test_page.response.rt[24];
+                    output.rt25 = test_page.response.rt[25];
+                }
+            }
+
+
+            TransientPart
+            {
+                on_event:entry()
+                {
+                    // Check if we need to ask a comprehension question.
+                    if (length(item.question) == 0) 
+                    {
+                        output.qanswer = -1;
+                        trial.leave();  // No question. Trial done.
+                    }
+                }
+            }
+
+
+            SubTrial sub2
+            {
+                on_event:entry()
+                {
+                    choose_1of2_page.set_text(item.question);
+                    choose_1of2_page.set_label_texts(YES_BUTTON_TEXT, NO_BUTTON_TEXT);
+                    choose_1of2_page.set_keys(KEY_Shift_L, KEY_Shift_R);
+                    choose_1of2_page.action(this);
+                }
+
+
+                on_event:exit()
+                {
+                    output.qanswer = choose_1of2_page.response.value;
+                }
+            }
+        }
+    }
+
+
+    Part
+    {
+        on_event:entry()
+        {
+            blank_page.action_auto(this, 500ms, 500ms);
+        }
+    }
+
+
+    Part thankyou
+    {
+        on_event:entry()
+        {
+            control.end_experiment();   // Check-in session.
+
+            exit_page.set_text(THANK_YOU_TEXT);
+            exit_page.action(this, 10s);
+        }
+    }
+
+
+    void save_modulus() 
+    {
+        int star = find_key(item.sentence, "*");
+        if (star > -1) 
+        {
+            modulus = substring(item.sentence, 0, star) + 
+                substring(item.sentence, star + 1, length(item.sentence));
+        } 
+        else 
+        {
+            modulus = item.sentence; 
+        }
+
+        modulus_score = test_page.response.score;
+    }
+}

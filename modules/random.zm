@@ -1,0 +1,93 @@
+/******************************************************************************\
+FILE:           random.zm
+AUTHOR:         Theo Veenker (UiL-OTS) <T.J.G.Veenker@uu.nl>
+ADAPTED BY:     Martijn van der Klis (UiL-OTS) <M.H.vanderKlis@uu.nl>
+
+DESCRIPTION:
+
+Item table randomization functions.
+
+
+HISTORY:
+2011-10-27 TV   Created.
+2013-08-13 MvdK Changed that the first item is not moved, instead of the last item.
+2014-06-27 MvdK Randomization added, restrictions: 
+                - each item should be surrounded by a filler.
+                - maximum of 5 grammatical/ungrammatical items in a row.
+
+\******************************************************************************/
+
+
+// Shuffles test_items table.
+int shuffle_test_items()
+{
+    while (!check_randomization(test_items[selected_group])) 
+    {
+        // Shuffle the items, but don't move the first item because that item represents the modulus.
+        test_items[selected_group].shuffle(1, -1);
+    }
+
+    dump_items(test_items[selected_group]);
+
+    return OK;
+}
+
+// Check whether the randomization is correct. Restrictions: 
+// - critical items should be surrounded by fillers. 
+// - maximal grammatical/ungrammatical items in a row.
+bool check_randomization(TestItem[] items) 
+{
+    int count_gram = 0; 
+    int count_ungram = 0; 
+    int i = 0;
+    while (i < items.size) 
+    {
+        // Check whether critical items are surrounded by fillers 
+        if (items[i].type == B2a || items[i].type == B2b) 
+        {   
+            bool prevNOK = i-1 == 0          || items[i-1].type != FILLER;
+            bool nextNOK = i+1 == items.size || items[i+1].type != FILLER;
+            if (prevNOK || nextNOK) return false;
+        } 
+
+        // Update grammatical counts
+        if (items[i].grammatical) 
+        {
+            count_gram++; 
+            count_ungram = 0;
+        }
+        else 
+        {
+            count_ungram++; 
+            count_gram = 0;
+        }
+        
+        // Test grammatical counts
+        if (count_gram > 5 || count_ungram > 5) return false; 
+
+        // If we found no problems, go to the next item. 
+        i++;
+    }
+
+    // All is correct, let's continue!
+    return true;
+}
+
+// Dumps the items to the terminal as a check
+void dump_items(TestItem[] items)
+{
+    println("Order\tNr\tGram?\tType\tSentence");
+
+    int n;
+    int nitems = items.size;
+    while (n < nitems)
+    {
+        println(
+            string(n + 1) + "\t" +
+            string(items[n].id) + "\t" +
+            string(items[n].grammatical) + "\t" +
+            string(items[n].type) + "\t" +
+            string(items[n].sentence));
+        n++;
+    }
+}

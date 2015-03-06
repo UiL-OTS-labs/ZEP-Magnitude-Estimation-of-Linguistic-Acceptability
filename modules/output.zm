@@ -1,0 +1,87 @@
+/******************************************************************************\
+FILE:           output.zm
+AUTHOR:         Theo Veenker (UiL-OTS) <T.J.G.Veenker@uu.nl>
+ADAPTED BY:     Martijn van der Klis (UiL-OTS) <M.H.vanderKlis@uu.nl>
+
+DESCRIPTION:
+
+Defines the formats of output table(s).
+
+
+HISTORY:
+2011-10-27 TV   Created.
+2013-08-13 MvdK Changed the auditory filename to the sentence.
+2013-08-13 MvdK Added response times for the sentence
+2014-06-20 MvdK Removed block number, added answer to question.
+
+\******************************************************************************/
+
+
+// Test phase output table record, defining what is to be logged for
+// each trial.
+record TestOutput
+{
+    int         trialnum;       // trial number
+    int         id;             // item id
+    ItemType    type;           // item type
+
+    real        score;          // response value
+
+    string      starredword;    // the important word in the stimulus
+    int         starredpos;     // the position of the word in the stimulus
+    int         starredrt;      // the reading time for the important word
+
+    int         rt1;            // reading time for segment 1 [ms]
+    int         rt2;            // reading time for segment 2 [ms]
+    int         rt3;            // reading time for segment 3 [ms]
+    int         rt4;            // reading time for segment 4 [ms]
+    int         rt5;            // reading time for segment 5 [ms]
+    int         rt6;            // reading time for segment 6 [ms]
+    int         rt7;            // reading time for segment 7 [ms]
+    int         rt8;            // reading time for segment 8 [ms]
+    int         rt9;            // reading time for segment 9 [ms]
+    int         rt10;           // reading time for segment 10 [ms]
+    int         rt11;           // reading time for segment 11 [ms]
+    int         rt12;           // reading time for segment 12 [ms]
+    int         rt13;           // reading time for segment 13 [ms]
+    int         rt14;           // reading time for segment 14 [ms]
+    int         rt15;           // reading time for segment 15 [ms]
+    int         rt16;           // reading time for segment 16 [ms]
+    int         rt17;           // reading time for segment 17 [ms]
+    int         rt18;           // reading time for segment 18 [ms]
+    int         rt19;           // reading time for segment 19 [ms]
+    int         rt20;           // reading time for segment 20 [ms]
+    int         rt21;           // reading time for segment 21 [ms]
+    int         rt22;           // reading time for segment 22 [ms]
+    int         rt23;           // reading time for segment 23 [ms]
+    int         rt24;           // reading time for segment 24 [ms]
+    int         rt25;           // reading time for segment 25 [ms]
+
+    int         qanswer;        // answer to question (-1=no question, 1=yes, 2=no)
+}
+
+
+// Test phase output table.
+TestOutput[..] test_output;
+
+
+//------------------------------------------------------------------------------
+
+
+// Appends one row of data to test phase output table.
+void test_output_append(TestOutput data)
+{
+    test_output.size = test_output.size + 1;
+    test_output[test_output.size-1] = data;
+}
+
+
+// Writes test phase output table contents to CSV file and clears the table.
+void test_output_save()
+{
+    // Append table to CSV file (create if non-existent). The filename 
+    // format is: <dbname>/<dbnum>/<expname>/ses<sesid>-<tblnum>.csv
+    test_output.append(expdb.experiment.session.table_filename(1), 
+        "Test phase results");
+    test_output.size = 0;
+}

@@ -1,0 +1,572 @@
+/******************************************************************************\
+FILE:           test_page.zm
+AUTHOR:         Theo Veenker (UiL-OTS) <T.J.G.Veenker@uu.nl>
+ADAPTED BY:     Martijn van der Klis (UiL-OTS) <M.H.vanderKlis@uu.nl>
+
+DESCRIPTION:
+
+Provides a page object to show to the participant during test phase trials.
+It handles presenting the stimulus and recording the participant's response.
+
+HISTORY:
+2011-10-27 TV   Created.
+2013-08-13 MvdK Changed the auditory magnitude estimation stimulus to a text stimulus.
+2013-08-15 MvdK Incorporated self-paced reading (cumulative window) into the experiment
+2014-06-20 MvdK - Only spacebar used as forward button
+                - Only numbers and commas are allowed as input (if not, a warning is shown)
+                - Clear modulus display
+2014-06-24 MvdK - Improved input check (now also checks on number of commas)
+                - The '.' is treated as a separate segment. Implementation is a bit crude.
+
+\******************************************************************************/
+
+
+Page test_page
+{
+    TestItem    item;           // current item
+    string      stimulus;       // current complete stimulus text
+    string      stimtext;       // current stimulus segment
+
+
+    init()
+    {
+        fill_pattern_color = TEST_PAGE_COLOR;
+    }
+
+
+    on_event:key_press()
+    {
+        // Handle spacebar (only button allowed).
+        if (input_key == ' ')
+            response.process_hit(event_time);
+        else
+            handle_special_key(this, input_key, input_modifiers);
+    }
+
+
+    VerticalLayout layout
+    {
+        init()
+        {
+            spacing = 50;
+            height = 0;     // 0 means as large as possible
+        }
+
+        HorGridLayout mod_grid
+        {
+            init()
+            {
+                top_margin = 50;
+                is_visible = false; 
+            }
+
+            LabelGadget modulus_label
+            {
+                init()
+                {
+                    text = "<i>Frase de referencia</i>", true;
+
+                    font_family = TEST_PAGE_MESSAGE_FONT_FAMILY;
+                    font_size = TEST_PAGE_MESSAGE_FONT_SIZE;
+                }
+            }
+
+            LabelGadget score_label
+            {
+                init()
+                {
+                    text = "<i>Tu valoración</i>", true;
+
+                    font_family = TEST_PAGE_MESSAGE_FONT_FAMILY;
+                    font_size = TEST_PAGE_MESSAGE_FONT_SIZE;
+                }
+            }
+
+            LabelGadget modulus
+            {
+                init()
+                {
+                    is_wrapping = true;
+
+                    font_family = TEST_PAGE_MESSAGE_FONT_FAMILY;
+                    font_size = TEST_PAGE_MESSAGE_FONT_SIZE;
+                }
+            }
+
+            LabelGadget score
+            {
+                init()
+                {
+                    font_family = TEST_PAGE_MESSAGE_FONT_FAMILY;
+                    font_size = TEST_PAGE_MESSAGE_FONT_SIZE;
+                }
+            }
+        }
+
+
+        CanvasGadget canvas
+        {
+            init()
+            {
+                fill_pattern_color = TEST_PAGE_STIMULUS_COLOR;
+                size = 950, 200;
+                offset_x = 50;
+                offset_y = 50;
+            }
+            
+            
+            TextShape stimulus
+            {
+                init()
+                {
+                    font_family = TEST_PAGE_STIMULUS_FONT_FAMILY;
+                    font_size = TEST_PAGE_STIMULUS_FONT_SIZE;
+                    line_pattern_color = TEST_PAGE_STIMULUS_TEXT_COLOR;
+                    hor_alignment = ALIGN_BEGIN;
+                    ver_alignment = ALIGN_BEGIN;
+                    is_visible = true;
+                }
+
+
+                on_event:pre_start()
+                {
+                    text = stimtext;
+                }
+            }
+        }
+        
+        
+        TextFieldGadget input
+        {
+            init()
+            {
+                font_family = TEST_PAGE_INPUT_FONT_FAMILY;
+                font_size = TEST_PAGE_INPUT_FONT_SIZE;
+                fill_pattern_color = TEST_PAGE_INPUT_COLOR;
+                text_color = TEST_PAGE_INPUT_TEXT_COLOR;
+                width_en = 20;
+                is_visible = false;
+            }
+
+            on_event:change()
+            {
+                // If we encounter invalid characters, color the text red and add a warning
+                if (!is_numeric(text))
+                {                    
+                    input.text_color = color:red;                       
+                    layout.warning.is_visible = true;
+                }
+                // Otherwise, set the text color to the default and disable the warning
+                else
+                {
+                    input.text_color = TEST_PAGE_INPUT_TEXT_COLOR;                        
+                    layout.warning.is_visible = false;
+                }
+
+            }
+            
+
+            on_event:enter()
+            {
+                // Accept when a valid positive number has been entered.
+                if (is_numeric(text))
+                {
+                    // Prepare the input for conversion to a real
+                    string to_real = replace(text, ",", ".");
+                    if (is_valid_real(to_real) && real(to_real) > 0)
+                    {
+                        response.process_score(real(to_real), event_time);
+                    }
+                }
+                // Else mark the input text in red, and add a warning
+                else 
+                {
+                    input.text_color = color:red;                     
+                    layout.warning.is_visible = true;
+                }
+            }
+        }
+
+        
+        HorizontalLayout buttons
+        {
+            init()
+            {
+                spacing = 50;
+                options = LAYOUT_EQUAL_WIDTH;
+                is_visible = false;
+            }
+            
+            ButtonGadget clear
+            {
+                init()
+                {
+                    text = "Borrar";
+                    font_family = TEST_PAGE_BUTTON_FONT_FAMILY;
+                    font_size = TEST_PAGE_BUTTON_FONT_SIZE;
+                    fill_pattern_color = TEST_PAGE_BUTTON_COLOR;
+                    text_color = TEST_PAGE_BUTTON_TEXT_COLOR;
+                }
+
+
+                on_event:activate()
+                {
+                    input.text = "";
+                    input.text_color = TEST_PAGE_INPUT_TEXT_COLOR;
+                }
+            }
+            
+            
+            ButtonGadget next
+            {
+                init()
+                {
+                    text = NEXT_BUTTON_TEXT;
+                    font_family = TEST_PAGE_BUTTON_FONT_FAMILY;
+                    font_size = TEST_PAGE_BUTTON_FONT_SIZE;
+                    fill_pattern_color = TEST_PAGE_BUTTON_COLOR;
+                    text_color = TEST_PAGE_BUTTON_TEXT_COLOR;
+                }
+
+
+                on_event:activate()
+                {
+                    // Accept when a valid positive number has been entered.
+                    if (is_numeric(text))
+                    {
+                        // Prepare the input for conversion to a real
+                        string to_real = replace(text, ",", ".");
+                        if (is_valid_real(to_real) && real(to_real) > 0)
+                        {
+                            response.process_score(real(to_real), event_time);
+                        }
+                    }
+                    // Else mark the input text in red, and add a warning
+                    else 
+                    {
+                        input.text_color = color:red;                     
+                        layout.warning.is_visible = true;
+                    }
+                }
+            }
+        }
+
+
+        // The warning label when something is wrong with the input
+        LabelGadget warning
+        {
+            init()
+            {
+                text = "Por favor, introduzca un valor con\nlas características correspondientes.";
+                is_wrapping = true;
+                is_visible = false; 
+
+                font_family = TEST_PAGE_MESSAGE_FONT_FAMILY;
+                font_size = TEST_PAGE_MESSAGE_FONT_SIZE;
+
+                text_color = color:red;
+            }
+        }
+        
+        
+        // Starts the stimulus and returns onset time. 
+        time start_stimulus(time t)
+        {
+            canvas.stimulus.start(t, 0s);
+
+            return canvas.stimulus.expected_start_time;
+        }
+
+        // Check for entering of other characters than numbers and ',' (with one comma max)
+        bool is_numeric(string s) 
+        {
+            int i = 0; 
+            int comma = 0; 
+            while (i < length(s)) 
+            {
+                char c = character(s, i);
+                if (c == ',') comma++; 
+
+                if (!is_valid_int(string(c)) && c != ',') return false;
+                if (comma > 1) return false; 
+                
+                i++;
+            }
+
+            return true;
+        }
+
+        // Reset the test window
+        void reset()
+        {
+            full_abort();
+
+            canvas.stimulus.text = "";
+            input.text = "";
+            layout.input.is_visible = false;
+            layout.buttons.is_visible = false;
+        }
+    }
+    
+
+    Response response
+    {
+        real    score;          // response score
+
+        int     segbeg;         // current segment pointer - begin
+        int     segend;         // current segment pointer - end
+
+        int     measnum;        // current measurement number
+
+        bool    starred;        // whether the current word is starred (i.e. is the important word)
+        string  starredword;    // the starred word
+        int     starredpos;     // the position of the starred word
+        int     starredrt;      // response time to the starred word        
+
+        int[..] rt;             // response times [ms]
+
+
+        void clear()
+        {
+            // Reset pointers and score.
+            score = 0;
+            segbeg = 0;
+            measnum = 1;
+
+            // Initialize rt array (1 more for convenience, we won't use rt[0]).
+            rt.size = MAX_SEGMENTS + 1;
+            int n;
+            while (n < rt.size)
+            {
+                rt[n] = -9999;
+                n++;
+            }
+        }
+
+
+        void process_hit(time t)
+        {
+            HitType validity = hit(t);
+
+            // Accept the first hit in the response interval, end the 
+            // response interval and start next stimulus/response interval.
+            if (validity == HIT_VALID)
+            {
+                // Measure rt for all stimuli but the fixation symbol.
+                if (stimtext != "+") 
+                {
+                    if (measnum <= MAX_SEGMENTS)
+                    {
+                        rt[measnum] = int(reaction_time(0));
+
+                        // Save starred response.
+                        if (starred) 
+                        {
+                            starredrt   = rt[measnum];
+                            starredpos  = measnum;
+                            starred     = false;
+                        }
+
+                        measnum++;
+                    }
+                    else
+                    {
+                        print_error("Too many segments in stimulus " + string(item.id) + "\n");
+                    }
+                }
+                // If it happens to be the fixation symbol, clear the stimulus text.
+                else stimtext = ""; 
+
+                // Check if we have reached the end of the stimulus, then start possibility to input value.
+                if (segbeg > length(stimulus))
+                {
+                    layout.input.is_visible = true;
+                    layout.buttons.is_visible = true;
+                }
+                // Else: change the stimulus.
+                else
+                {
+                    // Find the next space or enter in the stimulus
+                    int firstspace = find_key(stimulus, " ", segbeg);
+                    int firstenter = find_key(stimulus, "\n", segbeg);
+                    int segend = min(firstspace, firstenter);
+                    if (segend < 0 && firstenter > 0) segend = firstenter;
+                    if (segend < 0 && firstspace > 0) segend = firstspace;
+                    if (segend < 0) segend = length(stimulus);
+
+                    // Save the next word 
+                    starred = character(stimulus, segbeg) == '*';
+                    string s = substring(stimulus, segbeg, segend - segbeg);
+                    if (starred) 
+                    {
+                        s = substring(stimulus, segbeg + 1, segend - segbeg - 1);
+                        starredword = s;
+                    }
+
+                    // Append the next word (+ space/enter) to the stimulus text
+                    stimtext += s;
+                    string next2 = substring(stimulus, segend, 2);      // Added for lexmagest: '.' is last segment
+                    stimtext += next2 == " ." ? "" : substring(stimulus, segend, 1); 
+                    
+                    // Update segment pointer
+                    segbeg = segend + 1;
+
+                    // Start new stimulus
+                    abort();
+                    time stimonset = layout.start_stimulus(t);
+                    start(stimonset);
+                }
+            }
+            else if (validity == HIT_TOO_EARLY || validity == HIT_TOO_LATE)
+            {
+                // False alarm. Deal with this if desired.
+            }
+        }
+
+
+        void process_score(real val, time t)
+        {
+            HitType validity = hit(t);
+
+            // Accept the first hit in the response interval, save the entered score, and end it.
+            if (validity == HIT_VALID)
+            {
+                score = val;
+
+                ignore_remaining_hits();
+
+                stop();
+            }
+            else if (validity == HIT_TOO_EARLY || validity == HIT_TOO_LATE)
+            {
+                // False alarm. Deal with this if desired.
+            }
+        }
+
+
+        on_event:finish()
+        {
+            // Reset the input text 
+            layout.input.text_color = TEST_PAGE_INPUT_TEXT_COLOR;
+
+            done(CONTINUE);
+        }
+    }
+
+
+    // Aborts any ongoing activity on this page and signals the initiator of the trial that we're done.
+    void done(int msgid)
+    {
+        // Just in case; abort presentation if still active.
+        layout.reset();
+
+        signal_target(msgid);   // tell caller we're done
+        target = null;
+
+        control.clear_status();
+    }
+
+
+    //==========================================================================
+
+
+    // Performs preparatory work required before using this page.
+    void setup(int ntrials=-1)
+    {
+        test_page_overlay.setup(this);
+
+        // Enable or disable the progress bar.
+        test_page_overlay.show_progress_bar(ntrials);   // disabled if < 0
+    }
+
+
+    // Performs cleaning up if necessary.
+    void cleanup()
+    {
+        test_page_overlay.cleanup();
+    }
+
+
+    // Starts a trial.
+    void action(Object caller, TestItem it, time tref, int cycle, string modulus, real modulus_score)
+    {
+        // Save passed trial control parameters.
+        item = it;
+
+        // Break up sentence if it's too large: break on the first space after every nth character (specify n in LINE_BREAK).
+        // If the sentence contains manual enters (\n), don't do this. 
+        string s = item.sentence;
+        if (find_key(s, "\n") == -1) {
+            stimulus = "";
+            string leftover = s;
+            while (length(leftover) > LINE_BREAK) {
+                int next_segment = find_key(leftover, " ", LINE_BREAK); 
+                if (next_segment == -1) break;
+                stimulus += substring(leftover, 0, next_segment) + "\n";
+                leftover = substring(leftover, next_segment + 1, length(leftover));
+            }
+            stimulus += substring(leftover, 0, length(leftover));
+        }
+        else stimulus = s;
+        
+        // Replace '.' with ' .' to add an extra last segment.
+        stimulus = substring(stimulus, 0, length(stimulus) - 1) + " .";
+
+
+        // Add a prompt message (depending on the cycle) and display the modulus/score (if set)
+        if (cycle == 0) 
+        {
+            string prompt_message = "Valora la aceptabilidad de la <u>frase de referencia</u>.";
+            test_page_overlay.show_prompt(prompt_message, true);
+            layout.mod_grid.is_visible = false; 
+        }
+        else 
+        { 
+            string prompt_message = "Valora la aceptabilidad de la frase <u>actual</u> en comparación con la frase de referencia.";
+            test_page_overlay.show_prompt(prompt_message, true);
+            layout.mod_grid.is_visible = true; 
+            layout.mod_grid.modulus.text = modulus;
+            layout.mod_grid.score.text = replace(string(modulus_score), ".", ",");
+        }
+
+
+        // Show this page (if not yet done) and make tref the trial start time.
+        tref = test_window1.show_test_page(this, tref + INTERTRIAL_INTERVAL);
+
+
+        // Reset response data.
+        response.clear();
+
+
+        // Start text stimulus. First a fixation symbol is displayed. 
+        stimtext = "+"; 
+        time stimonset = layout.start_stimulus(tref);
+
+
+        // Response interval starts at stimulus onset.
+        response.start(stimonset);
+
+
+        // Update progress counter (if enabled).
+        test_page_overlay.update_progress_bar(cycle);
+
+
+        // Update status line on control window. Cleared in done() above.
+        control.set_status(string(item.id) + "  " + string(item.type));
+
+
+        // Remember who to signal when the trial is over.
+        target = caller;
+    }
+
+
+    // Replace the first appearance of f in s to r
+    string replace(string s, string f, string r) 
+    {
+        s = trim_whitespace(s);
+        int index = find_key(s, f); 
+        if (index > -1) s = substring(s, 0, index) + r + substring(s, index + 1, length(s));
+        return s;
+    }
+}
+

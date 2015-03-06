@@ -1,0 +1,156 @@
+/******************************************************************************\
+FILE:           stimuli.zm
+AUTHOR:         Theo Veenker (UiL-OTS) <T.J.G.Veenker@uu.nl>
+ADAPTED BY:     Martijn van der Klis (UiL-OTS) <M.H.vanderKlis@uu.nl>
+
+DESCRIPTION:
+
+Defines the formats of item table(s) and provides the actual content of
+the item table(s) i.e. stimulus information.
+
+
+HISTORY:
+2011-10-27 TV   Created.
+2013-08-13 MvdK Modified to accept sentences for linguistic acceptability experiment.
+2013-08-14 MvdK Added item type in the TestItem definition.
+2014-06-20 MvdK Added possible comprehension question to stimuli.
+2014-06-27 SSG  Added stimuli.
+2014-06-27 MvdK Added column whether the sentence is grammatical or not.
+
+\******************************************************************************/
+
+// Symbolic definition of item type.
+enum ItemType
+{
+    FILLER,     // filler
+    B2a,        // de deseo subjuntivo uso nativo
+    B2b,        // de deseo indicativo cuando se requiere subjuntivo
+}
+
+
+// Item record used for the test phase item table.
+record TestItem
+{
+    int         id;             // item id
+    ItemType    type;           // item type
+    bool        grammatical;    // whether the sentence is grammatical
+    string      sentence;       // the test sentence
+    string      question;       // the (possible) comprehension question
+}
+
+
+// Item table used in the practice phase before the test phase. The first item will be used as the modulus.
+//   index: item number
+TestItem[..] test_prac_items =
+{
+    // This is the practice list for all groups
+    // id,type, gram?, sentence (add manual line breaks with \n), question
+    {0, FILLER, true,  "Cada vez que viene de visita, mi tío trae regalos para toda la familia.", ""},       // the modulus
+    
+    {1, FILLER, false, "A ellos nos gusta la música rock, pero no tienen dinero para ir al concierto.", ""},
+    {2, FILLER, false, "Sara no puede almuerza con nosotros porque sus hijos están enfermos.", "¿Los hijos de Sara no pueden venir?"},
+    {3, FILLER, false, "Muchas personas aprenden jugar al béisbol y al fútbol cuando son niños.", ""},
+    {4, FILLER, true,  "Daniel escribe canciones tristes y se las canta a sus amigos.", "¿Daniel solamente escribe canciones alegres?"},
+    {5, FILLER, true,  "Nicolás se casa con la mujer con quien trabaja mi hermano.", ""},
+    {6, FILLER, true,  "En algunos bares de España se puede fumar.", ""},
+};
+
+
+// Item table used in the test phase. The first item in each group of items will be used as the modulus.
+//   index 1: group number
+//   index 2: item number
+TestItem[..][..] test_items =
+{
+    // This is the first list (L1)
+    { 
+    //   id,type,    gram?, sentence (add manual line breaks with \n), question
+        {0, FILLER,  true,  "No nos vemos con mucha frecuencia y nosotros estamos muy ocupados con el trabajo.", ""},       // the modulus
+            
+        {1, B2a,     true,  "Algunas universidades quieren que empiece a estudiar en agosto.", "¿Todas las universidades comienzan en agosto?"},
+        {2, B2a,     true,  "Los niños piden que juegues más con ellos los fines de semana.", "¿Los fines de semana los niños se aburren?"},
+        {3, B2a,     true,  "Su madre no le permite que vuelva a su casa nunca más.", ""},
+        {4, B2a,     true,  "El entrenador desea que saltemos más alto que el año pasado.", "¿El entrenador intenta batir un récord?"},
+        {5, B2a,     true,  "El director de la universidad consigue que viváis en la residencia un año más.", ""},
+        {6, B2b,     false,  "María les exige a sus estudiantes que corren más, pero no la escuchan.", ""},
+        {7, B2b,     false,  "El examinador logra que acaba antes del tiempo debido.", ""},
+        {8, B2b,     false,  "El padre le ruega a su hija que elige un esposo rico y honrado.", "¿Al padre no le importa nada el dinero?"},
+        {9, B2b,     false,  "El culpable me obliga a que escondo todas las pruebas.", ""},
+        {10, B2b,    false,  "Raúl anima a que mientes sobre su verdadero origen.", ""},
+        {11, FILLER, false, "Sus primos vienen a visitar una vez al año.", ""},
+        {12, FILLER, false, "El padre castiga a su hijo no hacer los deberes.", ""},
+        {13, FILLER, false, "Juan nunca se despide cuando se va a casa.", "¿Juan es una persona amable?"},
+        {14, FILLER, false, "A Juan no importa trabajar más horas.", ""},
+        {15, FILLER, false, "María no come verduras pero le gusta la fruta.", "¿María no come ni verduras ni fruta?"},
+        {16, FILLER, false, "José lleva dos semanas de vacaciones en Costa Rica.", ""},
+        {17, FILLER, false, "Belén quiere salir a la calle a jugar.", ""},
+        {18, FILLER, false, "A veces el teléfono suena y nadie se da cuenta.", "¿El teléfono se queda muchas veces sin contestar?"},
+        {19, FILLER, false, "Isabel siempre que sale la pide una ensalada y una copa de vino.", ""},
+        {20, FILLER, false, "Cojo el tren porque es más conveniente de conducir.", "¿Me gusta más el tren?"},
+        {21, FILLER, false, "Mi tió siempre nos trae regalos que nos sorprenden a todos.", ""},
+        {22, FILLER, false, "José vive un edificio que está en reforma.", "¿José vive en un edificio nuevo?"},
+        {23, FILLER, false, "Ana tiene un trabajo que consiste contestar el teléfono de la oficina.", "¿Ana solamente se comunica por correo?"},
+        {24, FILLER, false, "Los alumnos les piden a sus profesores lo imposible.", ""},
+        {25, FILLER, false, "A mis sobrinos gusta mucho cantar y disfrazarse.", ""},
+        {26, FILLER, false, "Pablo me deja el coche para el supermercado.", "¿Necesito un coche para hacer la compra?"},
+        {27, FILLER, false, "Entiendo que no es la primera vez que lo haces esto.", ""},
+        {28, FILLER, false, "Paula nos anima a comportarse mejor en clase.", "¿Paula opina que nos portamos mal?"},
+        {29, FILLER, false, "El director no les permite a alumnos a salir a la calle.", "¿Los alumnos deben de quedarse dentro?"},
+        {30, FILLER, false, "Los niños les piden muchas cosas a padres.", ""},
+        {31, FILLER, true,  "Su madre le dice a Pablo que no hay dinero.", ""},
+        {32, FILLER, true,  "Las niñas obligan a sus amigas cuando hace falta.", ""},
+        {33, FILLER, true,  "El trabajo que ha conseguido Belén es mismo que tiene Cecilia.", ""},
+        {34, FILLER, true,  "Antonio no viene porque tiene arreglar papeles importantes.", "¿Antonio viene de vacaciones?"},
+        {35, FILLER, true,  "Tenéis que entender para nosotros no es fácil.", ""},
+        {36, FILLER, true,  "Nunca me apetece salir después de deporte.", ""},
+        {37, FILLER, true,  "Laura siempre apaga el teléfono cuando se va cama.", ""},
+        {38, FILLER, true,  "Los trabajadores prefieren tener más vacaciones si tener más sueldo.", ""},
+        {39, FILLER, true,  "Los niños van la piscina porque hay actividades nuevas.", ""},
+        {40, FILLER, true,  "A veces Paula escribe que no pasa nada.", ""},
+    },
+    // This is the second list (L2)
+    { 
+    //   id, type,   gram?, sentence (add manual line breaks with \n), question
+        {0, FILLER,  true,  "No nos vemos con mucha frecuencia y nosotros estamos muy ocupados con el trabajo.", ""},       // the modulus
+        
+        {1, B2b,     false, "Algunas universidades quieren que empiezo a estudiar en agosto.", "¿Todas las universidades comienzan en agosto?"},
+        {2, B2b,     false, "Los niños piden que juegas más con ellos los fines de semana.", "¿Los fines de semana los niños se aburren?"},
+        {3, B2b,     false, "Su madre no le permite que vuelve a su casa nunca más.", ""},
+        {4, B2b,     false, "El entrenador desea que saltamos más alto que el año pasado.", "¿El entrenador intenta batir un récord?"},
+        {5, B2b,     false, "El director de la universidad consigue que vivís en la residencia un año más.", ""},
+        {6, B2a,     true, "María les exige a sus estudiantes que corran más, pero no la escuchan.", ""},
+        {7, B2a,     true, "El examinador logra que acabe antes del tiempo debido.", ""},
+        {8, B2a,     true, "El padre le ruega a su hija que elija un esposo rico y honrado.", "¿Al padre no le importa nada el dinero?"},
+        {9, B2a,     true, "El culpable me obliga a que esconda todas las pruebas.", ""},
+        {10, B2a,    true, "Raúl anima a que mientas sobre su verdadero origen.", ""},
+        {11, FILLER, true,  "Sus primos vienen a visitarlo una vez al año.", ""},
+        {12, FILLER, true,  "El padre castiga a su hijo por no hacer los deberes.", ""},
+        {13, FILLER, true,  "Juan nunca se despide cuando va casa.", "¿Juan es una persona amable?"},
+        {14, FILLER, true,  "A Juan no le importa trabajar más horas.", ""},
+        {15, FILLER, true,  "María no come verduras pero la gusta la fruta.", "¿María no come ni verduras ni fruta?"},
+        {16, FILLER, true,  "José lleva dos semanas vacaciones en Costa Rica.", ""},
+        {17, FILLER, true,  "Belén quiere salir la calle a jugar.", ""},
+        {18, FILLER, true,  "A veces el teléfono suena y nadie da cuenta.", "¿El teléfono se queda muchas veces sin contestar?"},
+        {19, FILLER, true,  "Isabel siempre que sale se pide una ensalada y una copa de vino.", ""},
+        {20, FILLER, true,  "Cojo el tren porque es más conveniente que conducir.", "¿Me gusta más el tren?"},
+        {21, FILLER, true,  "Mi tió siempre se trae regalos que les sorprenden a todos.", ""},
+        {22, FILLER, true,  "José vive en un edificio que está en reforma.", "¿José vive en un edificio nuevo?"},
+        {23, FILLER, true,  "Ana tiene un trabajo que consiste en contestar el teléfono de la oficina.", "¿Ana solamente se comunica por correo?"},
+        {24, FILLER, true,  "Los alumnos los piden a sus profesores lo imposible.", ""},
+        {25, FILLER, true,  "A mis sobrinos les gusta mucho cantar y disfrazarse.", ""},
+        {26, FILLER, true,  "Pablo me deja el coche para ir al supermercado.", "¿Necesito un coche para hacer la compra?"},
+        {27, FILLER, true,  "Entiendo que no es la primera vez que haces esto.", ""},
+        {28, FILLER, true,  "Paula lo anima a comportarse mejor en clase.", "¿Paula opina que nos portamos mal?"},
+        {29, FILLER, true,  "El director no les permite a los alumnos salir a la calle.", "¿Los alumnos deben de quedarse dentro?"},
+        {30, FILLER, true,  "Los niños les piden muchas cosas a sus padres.", ""},
+        {31, FILLER, false, "Su madre lo dice a Pablo que no hay dinero.", ""},
+        {32, FILLER, false, "Las niñas las obligan a sus amigas cuando hace falta.", ""},
+        {33, FILLER, false, "El trabajo que ha conseguido Belén es el mismo que tiene Cecilia.", ""},
+        {34, FILLER, false, "Antonio no viene porque tiene que arreglar papeles importantes.", "¿Antonio viene de vacaciones?"},
+        {35, FILLER, false, "Tenéis que entender que para nosotros no es fácil.", ""},
+        {36, FILLER, false, "Nunca me apetece salir después del deporte.", ""},
+        {37, FILLER, false, "Laura siempre apaga el teléfono cuando se va a la cama.", ""},
+        {38, FILLER, false, "Los trabajadores prefieren tener más vacaciones a tener más sueldo.", ""},
+        {39, FILLER, false, "Los niños van a la piscina porque hay actividades nuevas.", ""},
+        {40, FILLER, false, "A veces Paula escribe que no se pasa nada.", ""},
+    },
+};
